@@ -61,7 +61,7 @@ module "puppet-node" {
   source = "git::ssh://git@github.com/camptocamp/terraform-puppet-node.git"
 
   instance_count = var.instance_count
-  hostnames      = module.instance.instances_hostname
+  hostnames      = module.instance.this_instances_hostname
 
   puppet_autosign_psk = data.pass_password.puppet_autosign_psk.data["puppet_autosign_psk"]
   puppet_server       = "puppet.camptocamp.net"
@@ -70,9 +70,9 @@ module "puppet-node" {
   puppet_environment  = "staging4"
 
   connection = [
-    for i in range(length(module.instance.instances_hostname)) :
+    for i in range(length(module.instance.this_instances_hostname)) :
     {
-      host = module.instance.instances_public_ipv4[i]
+      host = module.instance.this_instances_public_ipv4[i]
     }
   ]
 }
@@ -85,7 +85,7 @@ resource "null_resource" "acceptance" {
   count      = var.instance_count
 
   connection {
-    host = module.instance.instances_public_ipv4[count.index]
+    host = module.instance.this_instances_public_ipv4[count.index]
     type = "ssh"
     user = "root"
   }

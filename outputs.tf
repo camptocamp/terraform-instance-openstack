@@ -1,16 +1,17 @@
-output "floatingip_addresses" {
+output "this_floatingip_addresses" {
   value = openstack_networking_floatingip_v2.this[*].address
 }
 
-output "instances_ipv4" {
-  value = openstack_compute_instance_v2.this[*].access_ip_v4
+output "this_instances_ipv4" {
+  description = "Instances' IPv4"
+  value       = openstack_compute_instance_v2.this[*].access_ip_v4
 }
 
-output "secondary_port_ips" {
+output "this_secondary_port_ips" {
   value = openstack_networking_port_v2.secondary_port[*].all_fixed_ips
 }
 
-output "instances_public_ipv4" {
+output "this_instances_public_ipv4" {
   description = "Instances' public IPv4"
   value = [
     for i in range(length(openstack_compute_instance_v2.this[*])) :
@@ -18,7 +19,7 @@ output "instances_public_ipv4" {
   ]
 }
 
-output "instances_hostname" {
+output "this_instances_hostname" {
   description = "Instances' hostname"
   value       = openstack_compute_instance_v2.this[*].name
 }
