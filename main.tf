@@ -62,7 +62,7 @@ resource "openstack_compute_instance_v2" "this" {
   }
 }
 
-resource "openstack_compute_interface_attach_v2" "attach_secondary_network" {
+resource "openstack_compute_interface_attach_v2" "secondary_network" {
   count = (var.secondary_network_id != "" ? var.instance_count : 0)
 
   instance_id = openstack_compute_instance_v2.this[count.index].id
