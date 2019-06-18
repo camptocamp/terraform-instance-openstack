@@ -39,7 +39,8 @@ resource "openstack_networking_secgroup_v2" "allow_ssh" {
 }
 
 module "instance" {
-  source   = "../"
+  source = "../"
+
   key_pair = var.key_pair
   domain   = "local"
 
@@ -60,21 +61,23 @@ module "instance" {
 module "puppet-node" {
   source = "git::ssh://git@github.com/camptocamp/terraform-puppet-node.git"
 
-  instance_count = var.instance_count
-  hostnames      = module.instance.this_instances_hostname
-
-  puppet_autosign_psk = data.pass_password.puppet_autosign_psk.data["puppet_autosign_psk"]
-  puppet_server       = "puppet.camptocamp.net"
-  puppet_caserver     = "puppetca.camptocamp.net"
-  puppet_role         = "base"
-  puppet_environment  = "staging4"
-
-  connection = [
-    for i in range(length(module.instance.this_instances_hostname)) :
+  instances = [
+    for i in range(length(module.instance.this_instance_hostname)) :
     {
-      host = module.instance.this_instances_public_ipv4[i]
+      hostname = module.instance.this_instance_hostname[i]
+      connection = {
+        host = module.instance.this_instance_public_ipv4[i]
+      }
     }
   ]
+
+  puppet = {
+    autosign_psk = data.pass_password.puppet_autosign_psk.data["puppet_autosign_psk"]
+    server       = "puppet.camptocamp.net"
+    caserver     = "puppetca.camptocamp.net"
+    role         = "base"
+    environment  = "staging4"
+  }
 }
 
 ###
@@ -85,7 +88,7 @@ resource "null_resource" "acceptance" {
   count      = var.instance_count
 
   connection {
-    host = module.instance.this_instances_public_ipv4[count.index]
+    host = module.instance.this_instance_public_ipv4[count.index]
     type = "ssh"
     user = "root"
   }
