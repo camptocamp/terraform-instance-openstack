@@ -45,38 +45,24 @@ module "instance" {
   domain   = "local"
 
   security_groups = [
-    "${data.openstack_networking_secgroup_v2.default.id}",
-    "${openstack_networking_secgroup_v2.allow_ssh.id}",
+    data.openstack_networking_secgroup_v2.default.id,
+    openstack_networking_secgroup_v2.allow_ssh.id,
   ]
 
-  instance_type      = "s1-2"
-  instance_image     = "Debian 9"
+  flavor_name        = "s1-2"
+  image_name         = "Debian 9"
   primary_network_id = "581fad02-158d-4dc6-81f0-c1ec2794bbec" # Ext-Net
 
   tags = {
-    test = "terraform-puppet-node-openstack"
+    test = "terraform-instance-openstack testing"
   }
-}
-
-module "puppet-node" {
-  source = "git::ssh://git@github.com/camptocamp/terraform-puppet-node.git"
-
-  instances = [
-    for i in range(length(module.instance.this_instance_hostname)) :
-    {
-      hostname = module.instance.this_instance_hostname[i]
-      connection = {
-        host = module.instance.this_instance_public_ipv4[i]
-      }
-    }
-  ]
 
   puppet = {
-    autosign_psk = data.pass_password.puppet_autosign_psk.data["puppet_autosign_psk"]
-    server       = "puppet.camptocamp.net"
-    caserver     = "puppetca.camptocamp.net"
-    role         = "base"
-    environment  = "staging4"
+    autosign_psk      = data.pass_password.puppet_autosign_psk.data["puppet_autosign_psk"]
+    server_address    = "puppet.camptocamp.net"
+    ca_server_address = "puppetca.camptocamp.net"
+    role              = "base"
+    environment       = "staging4"
   }
 }
 

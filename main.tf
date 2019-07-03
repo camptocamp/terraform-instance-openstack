@@ -37,8 +37,8 @@ resource "openstack_compute_instance_v2" "this" {
 
   name        = format("ip-%s.%s", join("-", split(".", length(split(":", openstack_networking_port_v2.primary_port[count.index].all_fixed_ips[0])) > 1 ? openstack_networking_port_v2.primary_port[count.index].all_fixed_ips[1] : openstack_networking_port_v2.primary_port[count.index].all_fixed_ips[0])), var.domain)
   key_pair    = var.key_pair
-  flavor_name = var.instance_type
-  image_name  = var.instance_image
+  flavor_name = var.flavor_name
+  image_name  = var.image_name
   metadata    = var.tags
 
   user_data = data.template_cloudinit_config.config[count.index].rendered
@@ -101,4 +101,82 @@ EOF
     content_type = "text/cloud-config"
     content = var.additional_user_data
   }
+}
+
+#########
+# Puppet
+
+module "puppet-node" {
+  source = "git::ssh://git@github.com/camptocamp/terraform-puppet-node.git"
+  instance_count = var.puppet == null ? 0 : var.instance_count
+
+  instances = [
+    for i in range(length(openstack_compute_instance_v2.this)) :
+    {
+      hostname = format("%s%s",
+        openstack_compute_instance_v2.this[i].name,
+        (var.image_name != "" ? format(".%s", var.domain) : "")
+      )
+      connection = {
+        host = coalesce(
+          (var.floating_ip ? openstack_networking_floatingip_v2.this[i].address : ""),
+          length(split(":", element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0))) > 1 ? element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 1) : element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0),
+          openstack_compute_instance_v2.this[i].access_ip_v4,
+          openstack_compute_instance_v2.this[i].access_ip_v6,
+        )
+      }
+    }
+  ]
+
+  server_address = lookup(var.puppet, "server_address", null)
+  server_port = lookup(var.puppet, "server_port", 8140)
+  ca_server_address = lookup(var.puppet, "ca_server_address", null)
+  ca_server_port = lookup(var.puppet, "ca_server_port", 8140)
+  environment = lookup(var.puppet, "environment", null)
+  role = lookup(var.puppet, "role", null)
+  autosign_psk = lookup(var.puppet, "autosign_psk", null)
+}
+
+##########
+# Rancher
+
+module "rancher-host" {
+  source = "git::ssh://git@github.com/camptocamp/terraform-rancher-host.git"
+  instance_count = var.rancher == null ? 0 : var.instance_count
+
+  instances = [
+    for i in range(length(openstack_compute_instance_v2.this)) :
+    {
+      hostname = format("%s%s",
+        openstack_compute_instance_v2.this[i].name,
+        (var.image_name != "" ? format(".%s", var.domain) : "")
+      )
+      agent_ip = length(split(":", element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0))) > 1 ? element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 1) : element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0)
+      connection = {
+        host = coalesce(
+          (var.floating_ip ? openstack_networking_floatingip_v2.this[i].address : ""),
+          length(split(":", element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0))) > 1 ? element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 1) : element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0),
+          openstack_compute_instance_v2.this[i].access_ip_v4,
+          openstack_compute_instance_v2.this[i].access_ip_v6,
+        )
+      }
+
+      host_labels = merge(
+        var.rancher != null ? var.rancher.host_labels : {},
+        {
+          "io.rancher.host.os" = "linux"
+          "io.rancher.host.provider" = "aws"
+          "io.rancher.host.region" = var.region
+          "io.rancher.host.external_dns_ip" = coalesce(
+            (var.floating_ip ? openstack_networking_floatingip_v2.this[i].address : ""),
+            length(split(":", element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0))) > 1 ? element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 1) : element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0),
+          )
+        }
+      )
+    }
+  ]
+
+  environment_id = var.rancher != null ? var.rancher.environment_id : ""
+
+  deps_on = var.puppet != null ? module.puppet-node.this_provisioner_id : []
 }
