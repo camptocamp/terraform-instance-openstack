@@ -165,7 +165,7 @@ module "rancher-host" {
         var.rancher != null ? var.rancher.host_labels : {},
         {
           "io.rancher.host.os" = "linux"
-          "io.rancher.host.provider" = "aws"
+          "io.rancher.host.provider" = "openstack"
           "io.rancher.host.region" = var.region
           "io.rancher.host.external_dns_ip" = coalesce(
             (var.floating_ip ? openstack_networking_floatingip_v2.this[i].address : ""),
