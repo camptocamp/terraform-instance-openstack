@@ -23,3 +23,8 @@ output "this_instance_hostname" {
   description = "Instances' hostname"
   value       = openstack_compute_instance_v2.this[*].name
 }
+
+output "this_instance_id" {
+  description = "Instance's id"
+  value       = openstack_compute_instance_v2.this[*].id
+}
