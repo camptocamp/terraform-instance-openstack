@@ -4,6 +4,7 @@ resource "openstack_networking_port_v2" "primary_port" {
   network_id         = var.primary_network_id
   security_group_ids = var.security_groups
   admin_state_up     = true
+  region             = var.region
 }
 
 resource "openstack_networking_port_v2" "secondary_port" {
@@ -12,12 +13,14 @@ resource "openstack_networking_port_v2" "secondary_port" {
   network_id         = var.secondary_network_id
   security_group_ids = var.security_groups
   admin_state_up     = true
+  region             = var.region
 }
 
 resource "openstack_networking_floatingip_v2" "this" {
   count = (var.floating_ip ? var.instance_count : 0)
 
-  pool = var.floating_ip_pool
+  pool   = var.floating_ip_pool
+  region = var.region
 }
 
 resource "random_string" "servergroup_name" {
@@ -30,6 +33,7 @@ resource "random_string" "servergroup_name" {
 resource "openstack_compute_servergroup_v2" "this" {
   name     = random_string.servergroup_name.result
   policies = ["anti-affinity"]
+  region   = var.region
 }
 
 resource "openstack_compute_instance_v2" "this" {
@@ -40,12 +44,13 @@ resource "openstack_compute_instance_v2" "this" {
   flavor_name = var.flavor_name
   image_name  = var.image_name
   metadata    = var.tags
+  region      = var.region
 
   user_data = data.template_cloudinit_config.config[count.index].rendered
 
-  network {
-    port = openstack_networking_port_v2.primary_port[count.index].id
-  }
+  #network {
+  #  port = openstack_networking_port_v2.primary_port[count.index].id
+  #}
 
   scheduler_hints {
     group = openstack_compute_servergroup_v2.this.id
@@ -62,11 +67,20 @@ resource "openstack_compute_instance_v2" "this" {
   }
 }
 
+resource "openstack_compute_interface_attach_v2" "primary_network" {
+  count = var.instance_count
+
+  instance_id = openstack_compute_instance_v2.this[count.index].id
+  port_id     = openstack_networking_port_v2.primary_port[count.index].id
+  region      = var.region
+}
+
 resource "openstack_compute_interface_attach_v2" "secondary_network" {
   count = (var.secondary_network_id != "" ? var.instance_count : 0)
 
   instance_id = openstack_compute_instance_v2.this[count.index].id
   port_id     = openstack_networking_port_v2.secondary_port[count.index].id
+  region      = var.region
 }
 
 resource "openstack_compute_floatingip_associate_v2" "this" {
@@ -74,6 +88,7 @@ resource "openstack_compute_floatingip_associate_v2" "this" {
 
   floating_ip = openstack_networking_floatingip_v2.this[count.index].address
   instance_id = openstack_compute_instance_v2.this[count.index].id
+  region      = var.region
 }
 
 data "template_cloudinit_config" "config" {
@@ -113,10 +128,7 @@ module "puppet-node" {
   instances = [
     for i in range(length(openstack_compute_instance_v2.this)) :
     {
-      hostname = format("%s%s",
-        openstack_compute_instance_v2.this[i].name,
-        (var.image_name != "" ? format(".%s", var.domain) : "")
-      )
+      hostname = openstack_compute_instance_v2.this[i].name
       connection = {
         host = coalesce(
           (var.floating_ip ? openstack_networking_floatingip_v2.this[i].address : ""),
@@ -147,10 +159,7 @@ module "rancher-host" {
   instances = [
     for i in range(length(openstack_compute_instance_v2.this)) :
     {
-      hostname = format("%s%s",
-        openstack_compute_instance_v2.this[i].name,
-        (var.image_name != "" ? format(".%s", var.domain) : "")
-      )
+      hostname = openstack_compute_instance_v2.this[i].name
       agent_ip = length(split(":", element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0))) > 1 ? element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 1) : element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0)
       connection = {
         host = coalesce(
