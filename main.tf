@@ -152,7 +152,8 @@ module "rancher-host" {
     for i in range(length(openstack_compute_instance_v2.this)) :
     {
       hostname = openstack_compute_instance_v2.this[i].name
-      agent_ip = length(split(":", element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0))) > 1 ? element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 1) : element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0)
+      agent_ip = (var.public_interface == "primary" ? (length(split(":", openstack_networking_port_v2.primary_port[i].all_fixed_ips[0])) > 1 ? openstack_networking_port_v2.primary_port[i].all_fixed_ips[1] : openstack_networking_port_v2.primary_port[i].all_fixed_ips[0]) : (length(split(":", openstack_networking_port_v2.secondary_port[i].all_fixed_ips[0])) > 1 ? openstack_networking_port_v2.secondary_port[i].all_fixed_ips[1] : openstack_networking_port_v2.secondary_port[i].all_fixed_ips[0]))
+
       connection = {
         host = coalesce(
           (var.floating_ip ? openstack_networking_floatingip_v2.this[i].address : ""),
