@@ -15,7 +15,7 @@ output "this_instance_public_ipv4" {
   description = "Instances' public IPv4"
   value = [
     for i in range(length(openstack_compute_instance_v2.this[*])) :
-    (var.public_interface == "primary" ? length(split(":", openstack_networking_port_v2.primary_port[i].all_fixed_ips[0])) > 1 ? openstack_networking_port_v2.primary_port[i].all_fixed_ips[1] : openstack_networking_port_v2.primary_port[i].all_fixed_ips[0] : length(split(":", openstack_networking_port_v2.secondary_port[i].all_fixed_ips[0])) > 1 ? openstack_networking_port_v2.secondary_port[i].all_fixed_ips[1] : openstack_networking_port_v2.secondary_port[i].all_fixed_ips[0])
+    (var.public_interface == "primary" ? (length(split(":", openstack_networking_port_v2.primary_port[i].all_fixed_ips[0])) > 1 ? openstack_networking_port_v2.primary_port[i].all_fixed_ips[1] : openstack_networking_port_v2.primary_port[i].all_fixed_ips[0]) : (length(split(":", openstack_networking_port_v2.secondary_port[i].all_fixed_ips[0])) > 1 ? openstack_networking_port_v2.secondary_port[i].all_fixed_ips[1] : openstack_networking_port_v2.secondary_port[i].all_fixed_ips[0]))
   ]
 }
 

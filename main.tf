@@ -124,7 +124,7 @@ module "puppet-node" {
       connection = {
         host = coalesce(
           (var.floating_ip ? openstack_networking_floatingip_v2.this[i].address : ""),
-          length(split(":", element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0))) > 1 ? element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 1) : element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0),
+          (length(split(":", openstack_networking_port_v2.primary_port[i].all_fixed_ips[0])) > 1 ? openstack_networking_port_v2.primary_port[i].all_fixed_ips[1] : openstack_networking_port_v2.primary_port[i].all_fixed_ips[0]),
           openstack_compute_instance_v2.this[i].access_ip_v4,
           openstack_compute_instance_v2.this[i].access_ip_v6,
         )
@@ -157,7 +157,7 @@ module "rancher-host" {
       connection = {
         host = coalesce(
           (var.floating_ip ? openstack_networking_floatingip_v2.this[i].address : ""),
-          length(split(":", element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0))) > 1 ? element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 1) : element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0),
+          (length(split(":", openstack_networking_port_v2.primary_port[i].all_fixed_ips[0])) > 1 ? openstack_networking_port_v2.primary_port[i].all_fixed_ips[1] : openstack_networking_port_v2.primary_port[i].all_fixed_ips[0]),
           openstack_compute_instance_v2.this[i].access_ip_v4,
           openstack_compute_instance_v2.this[i].access_ip_v6,
         )
@@ -171,7 +171,7 @@ module "rancher-host" {
           "io.rancher.host.region" = var.region
           "io.rancher.host.external_dns_ip" = coalesce(
             (var.floating_ip ? openstack_networking_floatingip_v2.this[i].address : ""),
-            length(split(":", element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0))) > 1 ? element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 1) : element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0),
+            (length(split(":", openstack_networking_port_v2.primary_port[i].all_fixed_ips[0])) > 1 ? openstack_networking_port_v2.primary_port[i].all_fixed_ips[1] : openstack_networking_port_v2.primary_port[i].all_fixed_ips[0]),
           )
         }
       )
