@@ -111,10 +111,10 @@ EOF
   }
 
   part {
-    filename = "additional.cfg"
-    merge_type = "list(append)+dict(recurse_array)+str()"
+    filename     = "additional.cfg"
+    merge_type   = "list(append)+dict(recurse_array)+str()"
     content_type = "text/cloud-config"
-    content = var.additional_user_data
+    content      = var.additional_user_data
   }
 }
 
@@ -122,7 +122,7 @@ EOF
 # Puppet
 
 module "puppet-node" {
-  source = "git::ssh://git@github.com/camptocamp/terraform-puppet-node.git"
+  source         = "git::ssh://git@github.com/camptocamp/terraform-puppet-node.git"
   instance_count = var.puppet == null ? 0 : var.instance_count
 
   instances = [
@@ -130,30 +130,50 @@ module "puppet-node" {
     {
       hostname = openstack_compute_instance_v2.this[i].name
       connection = {
+        type     = lookup(var.connection, "type", null)
+        user     = lookup(var.connection, "user", "terraform")
+        password = lookup(var.connection, "password", null)
         host = coalesce(
           (var.floating_ip ? openstack_networking_floatingip_v2.this[i].address : ""),
           length(split(":", element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0))) > 1 ? element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 1) : element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0),
           openstack_compute_instance_v2.this[i].access_ip_v4,
           openstack_compute_instance_v2.this[i].access_ip_v6,
         )
+        port                = lookup(var.connection, "port", 22)
+        timeout             = lookup(var.connection, "timeout", "")
+        script_path         = lookup(var.connection, "script_path", null)
+        private_key         = lookup(var.connection, "private_key", null)
+        agent               = lookup(var.connection, "agent", null)
+        agent_identity      = lookup(var.connection, "agent_identity", null)
+        host_key            = lookup(var.connection, "host_key", null)
+        https               = lookup(var.connection, "https", false)
+        insecure            = lookup(var.connection, "insecure", false)
+        use_ntlm            = lookup(var.connection, "use_ntlm", false)
+        cacert              = lookup(var.connection, "cacert", null)
+        bastion_host        = lookup(var.connection, "bastion_host", null)
+        bastion_host_key    = lookup(var.connection, "bastion_host_key", null)
+        bastion_port        = lookup(var.connection, "bastion_port", 22)
+        bastion_user        = lookup(var.connection, "bastion_user", null)
+        bastion_password    = lookup(var.connection, "bastion_password", null)
+        bastion_private_key = lookup(var.connection, "bastion_private_key", null)
       }
     }
   ]
 
-  server_address = lookup(var.puppet, "server_address", null)
-  server_port = lookup(var.puppet, "server_port", 443)
+  server_address    = lookup(var.puppet, "server_address", null)
+  server_port       = lookup(var.puppet, "server_port", 443)
   ca_server_address = lookup(var.puppet, "ca_server_address", null)
-  ca_server_port = lookup(var.puppet, "ca_server_port", 443)
-  environment = lookup(var.puppet, "environment", null)
-  role = lookup(var.puppet, "role", null)
-  autosign_psk = lookup(var.puppet, "autosign_psk", null)
+  ca_server_port    = lookup(var.puppet, "ca_server_port", 443)
+  environment       = lookup(var.puppet, "environment", null)
+  role              = lookup(var.puppet, "role", null)
+  autosign_psk      = lookup(var.puppet, "autosign_psk", null)
 }
 
 ##########
 # Rancher
 
 module "rancher-host" {
-  source = "git::ssh://git@github.com/camptocamp/terraform-rancher-host.git"
+  source         = "git::ssh://git@github.com/camptocamp/terraform-rancher-host.git"
   instance_count = var.rancher == null ? 0 : var.instance_count
 
   instances = [
@@ -162,20 +182,40 @@ module "rancher-host" {
       hostname = openstack_compute_instance_v2.this[i].name
       agent_ip = length(split(":", element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0))) > 1 ? element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 1) : element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0)
       connection = {
+        type     = lookup(var.connection, "type", null)
+        user     = lookup(var.connection, "user", "terraform")
+        password = lookup(var.connection, "password", null)
         host = coalesce(
           (var.floating_ip ? openstack_networking_floatingip_v2.this[i].address : ""),
           length(split(":", element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0))) > 1 ? element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 1) : element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0),
           openstack_compute_instance_v2.this[i].access_ip_v4,
           openstack_compute_instance_v2.this[i].access_ip_v6,
         )
+        port                = lookup(var.connection, "port", 22)
+        timeout             = lookup(var.connection, "timeout", "")
+        script_path         = lookup(var.connection, "script_path", null)
+        private_key         = lookup(var.connection, "private_key", null)
+        agent               = lookup(var.connection, "agent", null)
+        agent_identity      = lookup(var.connection, "agent_identity", null)
+        host_key            = lookup(var.connection, "host_key", null)
+        https               = lookup(var.connection, "https", false)
+        insecure            = lookup(var.connection, "insecure", false)
+        use_ntlm            = lookup(var.connection, "use_ntlm", false)
+        cacert              = lookup(var.connection, "cacert", null)
+        bastion_host        = lookup(var.connection, "bastion_host", null)
+        bastion_host_key    = lookup(var.connection, "bastion_host_key", null)
+        bastion_port        = lookup(var.connection, "bastion_port", 22)
+        bastion_user        = lookup(var.connection, "bastion_user", null)
+        bastion_password    = lookup(var.connection, "bastion_password", null)
+        bastion_private_key = lookup(var.connection, "bastion_private_key", null)
       }
 
       host_labels = merge(
         var.rancher != null ? var.rancher.host_labels : {},
         {
-          "io.rancher.host.os" = "linux"
+          "io.rancher.host.os"       = "linux"
           "io.rancher.host.provider" = "openstack"
-          "io.rancher.host.region" = var.region
+          "io.rancher.host.region"   = var.region
           "io.rancher.host.external_dns_ip" = coalesce(
             (var.floating_ip ? openstack_networking_floatingip_v2.this[i].address : ""),
             length(split(":", element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0))) > 1 ? element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 1) : element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0),
