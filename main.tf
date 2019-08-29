@@ -79,22 +79,6 @@ resource "openstack_compute_instance_v2" "this" {
   }
 }
 
-resource "openstack_compute_interface_attach_v2" "primary_network" {
-  count = var.instance_count
-
-  instance_id = openstack_compute_instance_v2.this[count.index].id
-  port_id     = openstack_networking_port_v2.primary_port[count.index].id
-  region      = var.region
-}
-
-resource "openstack_compute_interface_attach_v2" "secondary_network" {
-  count = (var.secondary_network_id != "" ? var.instance_count : 0)
-
-  instance_id = openstack_compute_instance_v2.this[count.index].id
-  port_id     = openstack_networking_port_v2.secondary_port[count.index].id
-  region      = var.region
-}
-
 resource "openstack_compute_floatingip_associate_v2" "this" {
   count = (var.floating_ip ? var.instance_count : 0)
 
