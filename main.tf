@@ -48,9 +48,21 @@ resource "openstack_compute_instance_v2" "this" {
 
   user_data = data.template_cloudinit_config.config[count.index].rendered
 
-  #network {
-  #  port = openstack_networking_port_v2.primary_port[count.index].id
-  #}
+  dynamic "network" {
+    for_each = var.primary_network_id != "" ? { "id" = var.primary_network_id } : {}
+
+    content {
+      port = openstack_networking_port_v2.primary_port[count.index].id
+    }
+  }
+
+  dynamic "network" {
+    for_each = var.secondary_network_id != "" ? { "id" = var.secondary_network_id } : {}
+
+    content {
+      port = openstack_networking_port_v2.secondary_port[count.index].id
+    }
+  }
 
   scheduler_hints {
     group = openstack_compute_servergroup_v2.this.id
