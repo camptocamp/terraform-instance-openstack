@@ -1,12 +1,3 @@
-resource "openstack_networking_port_v2" "primary_port" {
-  count = var.instance_count
-
-  network_id         = var.primary_network_id
-  security_group_ids = var.security_groups
-  admin_state_up     = true
-  region             = var.region
-}
-
 resource "openstack_networking_port_v2" "secondary_port" {
   count = (var.secondary_network_id == "" ? 0 : var.instance_count)
 
@@ -48,9 +39,9 @@ resource "openstack_compute_instance_v2" "this" {
 
   user_data = data.template_cloudinit_config.config[count.index].rendered
 
-  #network {
-  #  port = openstack_networking_port_v2.primary_port[count.index].id
-  #}
+  network {
+    port = openstack_networking_port_v2.primary_port[count.index].id
+  }
 
   scheduler_hints {
     group = openstack_compute_servergroup_v2.this.id
