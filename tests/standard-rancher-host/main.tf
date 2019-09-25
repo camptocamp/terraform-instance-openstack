@@ -1,13 +1,12 @@
 ###
-# Variables
-#
-variable "key_pair" {}
-
-###
 # Datasources
 #
 data "pass_password" "puppet_autosign_psk" {
   path = "terraform/c2c_mgmtsrv/puppet_autosign_psk"
+}
+
+data "pass_password" "ssh_key" {
+  path = "terraform/ssh/terraform"
 }
 
 ###
@@ -28,25 +27,25 @@ resource "openstack_networking_secgroup_rule_v2" "allow_ssh" {
   port_range_min    = 22
   port_range_max    = 22
   remote_ip_prefix  = "0.0.0.0/0"
-  security_group_id = openstack_networking_secgroup_v2.allow_ssh.id
+  security_group_id = openstack_networking_secgroup_v2.test_standard_rancher_host.id
   region            = "SBG5"
 }
 
-resource "openstack_networking_secgroup_v2" "allow_ssh" {
-  name        = "allow_ssh"
-  description = "Security Group to allow access to SSH"
+resource "openstack_networking_secgroup_v2" "test_standard_rancher_host" {
+  name        = "test_standard_rancher_host"
+  description = "Terraform instance testing"
   region      = "SBG5"
 }
 
 module "instance" {
-  source = "../"
+  source = "../../"
 
-  key_pair = var.key_pair
+  key_pair = "terraform"
   domain   = "local"
 
   security_groups = [
     data.openstack_networking_secgroup_v2.default.id,
-    openstack_networking_secgroup_v2.allow_ssh.id,
+    openstack_networking_secgroup_v2.test_standard_rancher_host.id,
   ]
 
   flavor_name        = "s1-2"
@@ -59,10 +58,22 @@ module "instance" {
 
   puppet = {
     autosign_psk      = data.pass_password.puppet_autosign_psk.data["puppet_autosign_psk"]
-    server_address    = "puppet.camptocamp.net"
-    ca_server_address = "puppetca.camptocamp.net"
+    server_address    = "puppet.camptocamp.com"
+    ca_server_address = "puppetca.camptocamp.com"
     role              = "base"
     environment       = "staging4"
+  }
+
+  rancher = {
+    environment_id = "1a5"
+    host_labels = {
+      foo = "bar"
+      bar = "baz"
+    }
+  }
+
+  connection = {
+    private_key = data.pass_password.ssh_key.data["id_rsa"]
   }
 }
 
@@ -74,9 +85,10 @@ resource "null_resource" "acceptance" {
   count      = var.instance_count
 
   connection {
-    host = module.instance.this_instance_public_ipv4[count.index]
-    type = "ssh"
-    user = "root"
+    host        = module.instance.this_instance_public_ipv4[count.index]
+    type        = "ssh"
+    user        = "terraform"
+    private_key = data.pass_password.ssh_key.data["id_rsa"]
   }
 
   provisioner "file" {
@@ -86,7 +98,7 @@ resource "null_resource" "acceptance" {
 
   provisioner "file" {
     source      = "goss.yaml"
-    destination = "/root/goss.yaml"
+    destination = "/home/terraform/goss.yaml"
   }
 
   provisioner "remote-exec" {

@@ -1,0 +1,39 @@
+port:
+  tcp:22:
+    listening: true
+    ip:
+    - 0.0.0.0
+  tcp6:22:
+    listening: true
+    ip:
+    - '::'
+
+package:
+  puppet-agent:
+    installed: true
+  docker-ce:
+    installed: true
+
+service:
+  puppet:
+    enabled: true
+    running: true
+  docker:
+    enabled: true
+    running: true
+
+command:
+  docker info:
+    exit-status: 0
+    stdout:
+      - "Storage Driver: overlay2"
+      - "Logging Driver: journald"
+
+file:
+  /root/.ssh/authorized_keys:
+    exists: true
+    contains:
+      - puppet
+  /var/lib/docker/volumes:
+    exists: true
+    filetype: directory

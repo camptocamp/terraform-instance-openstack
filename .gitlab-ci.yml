@@ -1,0 +1,44 @@
+---
+image:
+  name: camptocamp/terraform-ci:latest
+
+variables:
+  TF_VAR_key_pair: terraform
+
+before_script:
+  - gpg --import <(echo "$GPG_SECRET_KEY")
+  - gopass clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.camptocamp.com/camptocamp/password-store-terraform.git
+  - gopass clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.camptocamp.com/camptocamp/password-store-terraform.git terraform
+  - mkdir -p ~/.ssh
+  - gopass terraform/ssh/terraform id_rsa > ~/.ssh/id_rsa
+  - gopass terraform/ssh/terraform id_rsa.pub > ~/.ssh/id_rsa.pub
+  - chmod 0600 ~/.ssh/id_rsa
+  - ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+  - echo -e "[defaults]\ntimeout = 90\n[ssh_connection]\ncontrol_path = none\n" > ~/.ansible.cfg
+
+test-basic-instance:
+  script:
+    - cd tests/basic-instance
+    - tfenv install
+    - summon terraform init
+    - make test
+  after_script:
+    - cd tests/basic-instance
+    - make clean
+  only:
+    refs:
+      - master
+      - merge_requests
+test-standard-rancher-host:
+  script:
+    - cd tests/standard-rancher-host
+    - tfenv install
+    - summon terraform init
+    - make test
+  after_script:
+    - cd tests/standard-rancher-host
+    - make clean
+  only:
+    refs:
+      - master
+      - merge_requests
