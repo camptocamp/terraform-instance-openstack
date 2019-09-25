@@ -1,2 +1,2 @@
-tests/.terraform
-tests/terraform.tf*
+.terraform
+terraform.tf*
