@@ -14,6 +14,11 @@ before_script:
   - gopass terraform/ssh/terraform id_rsa.pub > ~/.ssh/id_rsa.pub
   - chmod 0600 ~/.ssh/id_rsa
   - ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+  - export NSS_WRAPPER_PASSWD="${HOME}/passwd"
+  - export NSS_WRAPPER_GROUP="${HOME}/group"
+  - echo "terraform:x:$(id -u):$(id -g):Terraform:$HOME:/bin/bash" > "${NSS_WRAPPER_PASSWD}"
+  - echo "terraform:x:$(id -g):" > "${NSS_WRAPPER_GROUP}"
+  - export LD_PRELOAD="/usr/lib/libnss_wrapper.so"
   - echo -e "[defaults]\ntimeout = 90\n[ssh_connection]\ncontrol_path = none\n" > ~/.ansible.cfg
 
 test-basic-instance:
@@ -21,7 +26,7 @@ test-basic-instance:
     - cd tests/basic-instance
     - tfenv install
     - summon terraform init
-    - make test
+    - timeout 45m make test || kill -9 `pidof terraform`
   after_script:
     - cd tests/basic-instance
     - make clean
@@ -29,12 +34,13 @@ test-basic-instance:
     refs:
       - master
       - merge_requests
+
 test-standard-rancher-host:
   script:
     - cd tests/standard-rancher-host
     - tfenv install
     - summon terraform init
-    - make test
+    - timeout 45m make test || kill -9 `pidof terraform`
   after_script:
     - cd tests/standard-rancher-host
     - make clean

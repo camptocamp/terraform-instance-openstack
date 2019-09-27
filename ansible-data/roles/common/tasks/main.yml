@@ -1,0 +1,22 @@
+- name: List physical network interfaces
+  command: find /sys/class/net -type l -not -lname '*virtual*' -printf '%f\n'
+  register: physical_interfaces
+
+- name: setup additional nic cloudinit config
+  copy:
+    dest: /etc/cloud/cloud.cfg.d/99_openstack_network.cfg
+    content: |
+      network:
+        version: 1
+        config:
+      {% for ifname in physical_interfaces.stdout.split() %}
+        - type: physical
+          name: {{ ifname }}
+          subnets:
+      {% if (extra_addresses | from_json)[hostvars[inventory_hostname]['ansible_%s' | format(ifname)]['macaddress']] is defined %}
+              - type: static
+              address: {{ (extra_addresses | from_json)[hostvars[inventory_hostname]['ansible_%s' | format(ifname)]['macaddress']] }}
+      {% else %}
+            - type: dhcp
+      {% endif %}
+      {% endfor %}

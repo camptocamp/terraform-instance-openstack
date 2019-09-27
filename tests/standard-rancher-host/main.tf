@@ -20,6 +20,12 @@ data "openstack_networking_secgroup_v2" "default" {
   name = "default"
 }
 
+resource "openstack_networking_secgroup_v2" "test_standard_rancher_host" {
+  name        = "test_standard_rancher_host"
+  description = "Terraform instance testing"
+  region      = "SBG5"
+}
+
 resource "openstack_networking_secgroup_rule_v2" "allow_ssh" {
   direction         = "ingress"
   ethertype         = "IPv4"
@@ -31,10 +37,16 @@ resource "openstack_networking_secgroup_rule_v2" "allow_ssh" {
   region            = "SBG5"
 }
 
-resource "openstack_networking_secgroup_v2" "test_standard_rancher_host" {
-  name        = "test_standard_rancher_host"
-  description = "Terraform instance testing"
-  region      = "SBG5"
+resource "openstack_networking_network_v2" "standard_rancher_host" {
+  name           = "test-standard-rancher-host"
+  admin_state_up = "true"
+}
+
+resource "openstack_networking_subnet_v2" "standard_rancher_host" {
+  name       = "test-standard-rancher-host"
+  network_id = openstack_networking_network_v2.standard_rancher_host.id
+  cidr       = "10.10.10.0/24"
+  ip_version = 4
 }
 
 module "instance" {
@@ -48,12 +60,13 @@ module "instance" {
     openstack_networking_secgroup_v2.test_standard_rancher_host.id,
   ]
 
-  flavor_name        = "s1-2"
-  image_name         = "Debian 9"
-  primary_network_id = "581fad02-158d-4dc6-81f0-c1ec2794bbec" # Ext-Net
+  flavor_name          = "s1-2"
+  image_name           = "Debian 9"
+  primary_network_id   = "581fad02-158d-4dc6-81f0-c1ec2794bbec" # Ext-Net
+  secondary_network_id = openstack_networking_network_v2.standard_rancher_host.id
 
   tags = {
-    test = "terraform-instance-openstack testing"
+    test = "terraform-instance-openstack testing standard-rancher-host"
   }
 
   puppet = {

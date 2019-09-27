@@ -1,9 +1,4 @@
 ###
-# Variables
-#
-variable "key_pair" {}
-
-###
 # Datasources
 #
 data "pass_password" "puppet_autosign_psk" {
@@ -25,6 +20,12 @@ data "openstack_networking_secgroup_v2" "default" {
   name = "default"
 }
 
+resource "openstack_networking_secgroup_v2" "test_basic_instance" {
+  name        = "test_basic_instance"
+  description = "Terraform instance testing"
+  region      = "SBG5"
+}
+
 resource "openstack_networking_secgroup_rule_v2" "allow_ssh" {
   direction         = "ingress"
   ethertype         = "IPv4"
@@ -34,12 +35,6 @@ resource "openstack_networking_secgroup_rule_v2" "allow_ssh" {
   remote_ip_prefix  = "0.0.0.0/0"
   security_group_id = openstack_networking_secgroup_v2.test_basic_instance.id
   region            = "SBG5"
-}
-
-resource "openstack_networking_secgroup_v2" "test_basic_instance" {
-  name        = "test_basic_instance"
-  description = "Terraform instance testing"
-  region      = "SBG5"
 }
 
 module "instance" {
@@ -54,11 +49,11 @@ module "instance" {
   ]
 
   flavor_name        = "s1-2"
-  image_name         = "Debian 9"
+  image_name         = "Ubuntu 16.04"
   primary_network_id = "581fad02-158d-4dc6-81f0-c1ec2794bbec" # Ext-Net
 
   tags = {
-    test = "terraform-instance-openstack testing"
+    test = "terraform-instance-openstack testing basic-instance"
   }
 
   puppet = {
