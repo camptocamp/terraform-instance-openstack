@@ -58,11 +58,11 @@ resource "openstack_compute_instance_v2" "this" {
 
   lifecycle {
     ignore_changes = [
-      "user_data",
-      "key_pair",
-      "image_name",
-      "network",
-      "scheduler_hints",
+      user_data,
+      key_pair,
+      image_name,
+      network,
+      scheduler_hints,
     ]
   }
 }
@@ -167,7 +167,7 @@ resource "null_resource" "provisioner" {
     }
 
     ansible_ssh_settings {
-      connect_timeout_seconds = 60
+      connect_timeout_seconds              = 60
       insecure_no_strict_host_key_checking = true
     }
   }
