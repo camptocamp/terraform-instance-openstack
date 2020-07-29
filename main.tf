@@ -112,7 +112,7 @@ EOF
 
 resource "null_resource" "provisioner" {
   count      = var.instance_count
-  depends_on = ["openstack_compute_instance_v2.this", "openstack_networking_port_v2.primary_port", "openstack_networking_port_v2.secondary_port"]
+  depends_on = [openstack_compute_instance_v2.this, openstack_networking_port_v2.primary_port, openstack_networking_port_v2.secondary_port]
 
   connection {
     type     = lookup(var.connection, "type", null)
