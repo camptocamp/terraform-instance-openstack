@@ -230,7 +230,7 @@ module "puppet-node" {
 # Rancher
 
 module "rancher-host" {
-  source         = "git::ssh://git@github.com/camptocamp/terraform-rancher-host.git"
+  source         = "git::ssh://git@github.com/camptocamp/terraform-rancher-host.git?ref=v1.x"
   instance_count = var.rancher == null ? 0 : var.instance_count
 
   instances = [
