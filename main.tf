@@ -118,7 +118,7 @@ EOF
 # Puppet
 
 module "puppet-node" {
-  source         = "git::https://github.com/camptocamp/terraform-puppet-node.git"
+  source         = "git::https://github.com/camptocamp/terraform-puppet-node.git?ref=tf-0-13"
   instance_count = var.puppet == null ? 0 : var.instance_count
 
   instances = [
