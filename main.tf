@@ -70,11 +70,11 @@ resource "openstack_compute_instance_v2" "this" {
 
   lifecycle {
     ignore_changes = [
-      "user_data",
-      "key_pair",
-      "image_name",
-      "network",
-      "scheduler_hints",
+      user_data,
+      key_pair,
+      image_name,
+      network,
+      scheduler_hints,
     ]
   }
 }
