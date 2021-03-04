@@ -29,6 +29,11 @@ variable "display_name" {
   default = ""
 }
 
+variable "hostname" {
+  type    = string
+  default = ""
+}
+
 variable "flavor_name" {
   type = string
 }

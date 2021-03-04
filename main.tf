@@ -96,6 +96,10 @@ data "template_cloudinit_config" "config" {
 
     content = <<EOF
 #cloud-config
+%{~if var.hostname != ""}
+hostname: "${var.hostname}"
+fqdn: "${var.hostname}.${var.domain}"
+%{~endif}
 system_info:
   default_user:
     name: terraform
@@ -183,7 +187,7 @@ module "puppet-node" {
   instances = [
     for i in range(length(openstack_compute_instance_v2.this)) :
     {
-      hostname = openstack_compute_instance_v2.this[i].name
+      hostname = var.hostname != "" ? format("%s-%d.%s", var.hostname, i, var.domain) : openstack_compute_instance_v2.this[i].name
       connection = {
         type     = lookup(var.connection, "type", null)
         user     = lookup(var.connection, "user", "terraform")
@@ -236,7 +240,7 @@ module "rancher-host" {
   instances = [
     for i in range(length(openstack_compute_instance_v2.this)) :
     {
-      hostname = openstack_compute_instance_v2.this[i].name
+      hostname = var.hostname != "" ? format("%s-%d.%s", var.hostname, i, var.domain) : openstack_compute_instance_v2.this[i].name
       agent_ip = length(split(":", element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0))) > 1 ? element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 1) : element(openstack_networking_port_v2.primary_port[i].all_fixed_ips, 0)
       connection = {
         type     = lookup(var.connection, "type", null)

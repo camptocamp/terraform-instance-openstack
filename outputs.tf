@@ -21,7 +21,7 @@ output "this_instance_public_ipv4" {
 
 output "this_instance_hostname" {
   description = "Instances' hostname"
-  value       = openstack_compute_instance_v2.this[*].name
+  value       = var.hostname != "" ? [for i in range(length(openstack_compute_instance_v2.this)) : format("%s-%s", var.hostname, i)] : openstack_compute_instance_v2.this[*].name
 }
 
 output "this_instance_id" {
