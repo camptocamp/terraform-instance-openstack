@@ -39,7 +39,7 @@ resource "openstack_compute_servergroup_v2" "this" {
 resource "openstack_compute_instance_v2" "this" {
   count = var.instance_count
 
-  name        = format("ip-%s.%s", join("-", split(".", length(split(":", openstack_networking_port_v2.primary_port[count.index].all_fixed_ips[0])) > 1 ? openstack_networking_port_v2.primary_port[count.index].all_fixed_ips[1] : openstack_networking_port_v2.primary_port[count.index].all_fixed_ips[0])), var.domain)
+  name        = var.display_name != "" ? format("%s-%s", var.display_name, count.index) : format("ip-%s.%s", join("-", split(".", length(split(":", openstack_networking_port_v2.primary_port[count.index].all_fixed_ips[0])) > 1 ? openstack_networking_port_v2.primary_port[count.index].all_fixed_ips[1] : openstack_networking_port_v2.primary_port[count.index].all_fixed_ips[0])), var.domain)
   key_pair    = var.key_pair
   flavor_name = var.flavor_name
   image_name  = var.image_name

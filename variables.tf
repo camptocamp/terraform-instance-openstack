@@ -24,6 +24,11 @@ variable "region" {
 ##########
 # Compute
 
+variable "display_name" {
+  type    = string
+  default = ""
+}
+
 variable "flavor_name" {
   type = string
 }
