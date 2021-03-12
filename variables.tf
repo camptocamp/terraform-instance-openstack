@@ -101,3 +101,11 @@ variable "puppet" {
   type    = map(string)
   default = null
 }
+
+#########
+# FreeIPA
+
+variable "freeipa" {
+  type    = map(string)
+  default = null
+}

@@ -83,6 +83,17 @@ resource "openstack_compute_floatingip_associate_v2" "this" {
   region      = var.region
 }
 
+module "freeipa_host" {
+  count = var.freeipa == null ? 0 : var.instance_count
+
+  source = "git::https://github.com/camptocamp/terraform-freeipa-host.git?ref=v1.x"
+
+  hostname = format("%s-%d.%s", var.hostname, count.index, var.domain)
+  domain   = var.freeipa != null ? lookup(var.freeipa, "domain", null) : null
+
+  force = true
+}
+
 data "template_cloudinit_config" "config" {
   count = var.instance_count
 
@@ -104,6 +115,13 @@ system_info:
   default_user:
     name: terraform
 EOF
+  }
+
+  part {
+    filename     = "freeipa.cfg"
+    merge_type   = "list(append)+dict(recurse_array)+str()"
+    content_type = "text/cloud-config"
+    content      = var.freeipa == null ? "" : module.freeipa_host[count.index].cloudinit_config
   }
 
   part {
